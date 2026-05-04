@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --font-syne: "Syne", sans-serif;
+  --font-mono: "DM Mono", monospace;
+
+  --color-surface:    #0d1117;
+  --color-card:       #0f1924;
+  --color-card-inner: #161b22;
+  --color-border:     #1e2d3d;
+  --color-border-dim: #2a3441;
+
+  --color-text-primary:   #e6edf3;
+  --color-text-secondary: #c9d1d9;
+  --color-text-muted:     #8b949e;
+  --color-text-dim:       #7d8590;
+
+  --color-cyan:   #00d4aa;
+  --color-blue:   #58c8f0;
+  --color-red:    #f85149;
+  --color-amber:  #efb84f;
+}
