@@ -175,7 +175,6 @@ export default function HealthPanel() {
           metrics={[
             ["version",   info.models.tampering.version],
             ["accuracy",  info.models.tampering.metrics.accuracy,  true],
-            ["f1 score",  info.models.tampering.metrics.f1],
             ["status",    health.models.tampering,                  true],
           ]}
         />
@@ -186,7 +185,6 @@ export default function HealthPanel() {
           metrics={[
             ["version",   info.models.deepfake.version],
             ["accuracy",  info.models.deepfake.metrics.accuracy,  true],
-            ["f1 score",  info.models.deepfake.metrics.f1],
             ["status",    health.models.deepfake,                  true],
           ]}
         />

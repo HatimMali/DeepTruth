@@ -5,12 +5,23 @@ export default function UploadBox({ setFile }) {
   const [selected, setSelected] = useState(null);
   const inputRef = useRef();
 
-  const ACCEPT = ".wav,.flac";
+  const NATIVE_FORMATS  = [".wav", ".flac"];
+  const CONVERT_FORMATS = [".mp3", ".ogg", ".m4a", ".aac", ".mp4", ".wma", ".opus", ".webm"];
+  const ALL_FORMATS     = [...NATIVE_FORMATS, ...CONVERT_FORMATS];
+  const ACCEPT          = ALL_FORMATS.join(",");
 
   function formatSize(bytes) {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / 1048576).toFixed(1) + " MB";
+  }
+
+  function getFileExt(filename) {
+    return filename.slice(filename.lastIndexOf(".")).toLowerCase();
+  }
+
+  function isConverted(filename) {
+    return CONVERT_FORMATS.includes(getFileExt(filename));
   }
 
   function handleFile(file) {
@@ -58,13 +69,43 @@ export default function UploadBox({ setFile }) {
         <p className="text-[15px] font-bold text-text-primary">Drop your audio file here</p>
         <p className="mt-1 font-mono text-[12px] text-text-dim">Drag &amp; drop or browse from your device</p>
 
-        {/* Format tags */}
-        <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-          {[".wav", ".flac"].map((ext) => (
-            <span key={ext} className="rounded-md border border-border-dim bg-card-inner px-2 py-0.5 font-mono text-[10px] text-text-muted">
-              {ext}
+        {/* Format tags — two rows: native + converted */}
+        <div className="mt-3 space-y-1.5">
+          {/* Native row */}
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {NATIVE_FORMATS.map((ext) => (
+              <span
+                key={ext}
+                className="rounded-md border border-cyan/30 bg-cyan/8 px-2 py-0.5 font-mono text-[10px] text-cyan"
+              >
+                {ext}
+              </span>
+            ))}
+          </div>
+
+          {/* Converted row */}
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {CONVERT_FORMATS.map((ext) => (
+              <span
+                key={ext}
+                className="rounded-md border border-border-dim bg-card-inner px-2 py-0.5 font-mono text-[10px] text-text-muted"
+              >
+                {ext}
+              </span>
+            ))}
+          </div>
+
+          {/* Legend */}
+          <div className="flex justify-center gap-4 pt-0.5">
+            <span className="flex items-center gap-1 font-mono text-[9px] text-text-dim">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan/70" />
+              native
             </span>
-          ))}
+            <span className="flex items-center gap-1 font-mono text-[9px] text-text-dim">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-border" />
+              auto-converted to wav
+            </span>
+          </div>
         </div>
 
         {/* Divider */}
@@ -112,9 +153,17 @@ export default function UploadBox({ setFile }) {
               {formatSize(selected.size)} · {selected.type.split("/")[1]?.toUpperCase() ?? "AUDIO"}
             </p>
           </div>
-          <span className="ml-auto shrink-0 rounded-[8px] border border-cyan/25 bg-cyan/10 px-2.5 py-0.5 font-mono text-[10px] text-cyan">
-            ready
-          </span>
+
+          <div className="ml-auto flex shrink-0 flex-col items-end gap-1">
+            <span className="rounded-[8px] border border-cyan/25 bg-cyan/10 px-2.5 py-0.5 font-mono text-[10px] text-cyan">
+              ready
+            </span>
+            {isConverted(selected.name) && (
+              <span className="rounded-[8px] border border-yellow/25 bg-yellow/10 px-2.5 py-0.5 font-mono text-[10px] text-yellow-400">
+                will convert → wav
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from services.deepfake_service import DeepfakeService
 from services.tampering_service import TamperingService
+from utils.audio_converter import convert_to_wav, ALREADY_SUPPORTED, SUPPORTED_CONVERSIONS
 
 # ---------------------------------------------------------------------------
 # App Init
@@ -28,7 +29,7 @@ app.add_middleware(
 deepfake_service = None
 tampering_service = None
 
-SUPPORTED_EXT = {".wav", ".flac"}
+SUPPORTED_EXT = ALREADY_SUPPORTED | SUPPORTED_CONVERSIONS
 
 # ---- Monitoring ----
 START_TIME = time.time()
@@ -43,8 +44,6 @@ def load_models():
 
     try:
         deepfake_service = DeepfakeService("models/best_cnn_model.pth")
-
-        # ── Changed: CNN checkpoint (.pt) instead of joblib RF model ───────
         tampering_service = TamperingService("models/cnn_tamper2.pt")
 
         print("✅ Models loaded successfully")
@@ -78,7 +77,7 @@ def validate_file(file: UploadFile):
     if ext not in SUPPORTED_EXT:
         raise HTTPException(
             status_code=400,
-            detail="Unsupported file type. Use .wav or .flac"
+            detail=f"Unsupported file type. Supported formats: {', '.join(sorted(SUPPORTED_EXT))}"
         )
 
 def get_uptime():
@@ -108,7 +107,7 @@ def get_latency_stats():
 def health():
     return {
         "status": "healthy",
-        "gpu": False,  # change if you detect torch.cuda.is_available()
+        "gpu": False,
         "models": {
             "deepfake":  "loaded" if deepfake_service  else "not loaded",
             "tampering": "loaded" if tampering_service else "not loaded",
@@ -127,17 +126,21 @@ def info():
         "uptime":  get_uptime(),
         "latency": get_latency_stats(),
 
+        "supported_formats": {
+            "native":     sorted(ALREADY_SUPPORTED),
+            "converted":  sorted(SUPPORTED_CONVERSIONS),
+        },
+
         "models": {
-            # ── Changed: reflects the new CNN tampering model ────────────
             "tampering": {
                 "type":    "CNN (Mel-spectrogram, 4-channel)",
                 "version": "v3",
                 "xai":     "Grad-CAM",
                 "metrics": {
-                    "note": "See best_auc in checkpoint"
+                    "note": "See best_auc in checkpoint",
+                    "accuracy": "92%"
                 }
             },
-            # ── Untouched ─────────────────────────────────────────────────
             "deepfake": {
                 "type":    "CNN (LFCC)",
                 "version": "v1",
@@ -150,7 +153,7 @@ def info():
     }
 
 # ---------------------------------------------------------------------------
-# Deepfake Prediction  (UNTOUCHED)
+# Deepfake Prediction
 # ---------------------------------------------------------------------------
 @app.post("/predict/deepfake")
 async def predict_deepfake(file: UploadFile = File(...)):
@@ -158,8 +161,11 @@ async def predict_deepfake(file: UploadFile = File(...)):
 
     try:
         audio_bytes = await file.read()
-        return deepfake_service.predict(audio_bytes, file.filename)
+        audio_bytes, converted_filename = convert_to_wav(audio_bytes, file.filename)
+        return deepfake_service.predict(audio_bytes, converted_filename)
 
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Deepfake error: {str(e)}")
 
@@ -172,7 +178,10 @@ async def predict_tampering(file: UploadFile = File(...)):
 
     try:
         audio_bytes = await file.read()
-        return tampering_service.predict(audio_bytes, file.filename)
+        audio_bytes, converted_filename = convert_to_wav(audio_bytes, file.filename)
+        return tampering_service.predict(audio_bytes, converted_filename)
 
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Tampering error: {str(e)}")

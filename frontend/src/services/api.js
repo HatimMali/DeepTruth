@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://deeptruth-nlbop.ondigitalocean.app/api",
+  baseURL: "http://localhost:8000/",
 });
 
 export const predictTampering = (file) => {
