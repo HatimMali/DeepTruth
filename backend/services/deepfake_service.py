@@ -72,15 +72,19 @@ class DeepfakeService:
             raise ValueError("Audio too short for analysis")
 
         # Aggregate predictions
+        # Aggregate predictions
         avg_prob = float(np.mean(probs))
         label = "Spoof" if avg_prob > 0.5 else "Bonafide"
+
+        # Probability of the predicted class
+        confidence = avg_prob if label == "Spoof" else 1 - avg_prob
 
         # 🔥 END TIMER
         processing_time = round((time.time() - start_time) * 1000, 2)
 
         return {
             "prediction": label,
-            "confidence": avg_prob,
+            "confidence": confidence,
             "segments": segments,
             "processing_time": f"{processing_time} ms"  # 🔥 NEW
         }

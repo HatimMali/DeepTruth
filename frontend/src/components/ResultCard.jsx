@@ -5,6 +5,10 @@ export default function ResultCard({ result }) {
   const isDeepfake =
     result.segments && Array.isArray(result.segments);
 
+  const isSpoof =
+    result.prediction?.toLowerCase() === "spoof" ||
+    result.prediction?.toLowerCase() === "deepfake";
+
   const confidencePct = (result.confidence * 100).toFixed(1);
 
   // --- Deepfake specific ---
@@ -18,8 +22,8 @@ export default function ResultCard({ result }) {
     ? result.segments[result.segments.length - 1].end + " sec"
     : result.duration ?? "—";
 
-  // Most suspicious segment
-  const topSegment = isDeepfake
+  // Most suspicious segment — only computed when spoof
+  const topSegment = isDeepfake && isSpoof
     ? result.segments.reduce((max, s) =>
         s.prob > max.prob ? s : max,
         result.segments[0]
@@ -116,29 +120,39 @@ export default function ResultCard({ result }) {
         {[
           ["prediction", result.prediction],
 
-          isDeepfake
+          !isDeepfake
+            ? ["anomaly location", result.anomaly_location ?? "—"]
+            : null,
+
+          isDeepfake && isSpoof
             ? [
                 "most suspicious segment",
                 topSegment
                   ? `${topSegment.start}s - ${topSegment.end}s`
                   : "—",
               ]
-            : ["anomaly location", result.anomaly_location ?? "—"],
+            : null,
 
-          isDeepfake
+          isDeepfake && isSpoof
             ? [
                 "peak spoof score",
                 topSegment ? topSegment.prob.toFixed(3) : "—",
               ]
-            : ["xai method", "Input Gradient Saliency"],
+            : null,
+
+          !isDeepfake
+            ? ["xai method", "Input Gradient Saliency"]
+            : null,
 
           ["processing time", result.processing_time ?? "—"],
-        ].map(([k, v]) => (
-          <div key={k} className="flex items-center justify-between border-t border-border py-2">
-            <span className="font-mono text-[11px] text-text-dim">{k}</span>
-            <span className="font-mono text-[11px] text-text-secondary">{v}</span>
-          </div>
-        ))}
+        ]
+          .filter(Boolean)
+          .map(([k, v]) => (
+            <div key={k} className="flex items-center justify-between border-t border-border py-2">
+              <span className="font-mono text-[11px] text-text-dim">{k}</span>
+              <span className="font-mono text-[11px] text-text-secondary">{v}</span>
+            </div>
+          ))}
       </div>
 
     </div>
