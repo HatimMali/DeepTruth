@@ -129,7 +129,7 @@ export default function HealthPanel() {
       status: health.gpu ? "online" : "degraded",
     },
     {
-      name: "SHAP Engine",
+      name: "Gradient map",
       sub: `explainability v${info.shap_version ?? "—"}`,
       dot: "#00d4aa",
       status: "online",

@@ -49,7 +49,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h1 className="text-[20px] font-bold text-text-primary" style={{ letterSpacing: "-0.3px" }}>
-              AudioForensics
+              DeepTruth: Audio Forensic Platform
             </h1>
             <p className="font-mono text-[11px] text-text-dim">v2.4.1 · detection engine</p>
           </div>
