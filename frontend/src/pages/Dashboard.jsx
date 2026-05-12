@@ -14,8 +14,33 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState(null);
 
+  const getAudioDuration = (file) => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(URL.createObjectURL(file));
+      audio.onloadedmetadata = () => {
+        URL.revokeObjectURL(audio.src);
+        resolve(audio.duration);
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(audio.src);
+        reject(new Error("Could not read audio duration"));
+      };
+    });
+  };
+
   const handleAnalyze = async () => {
     if (!file) return;
+
+    try {
+      const duration = await getAudioDuration(file);
+      if (Number.isFinite(duration) && duration > 120) {
+        setError("Audio must be 2 minutes or less.");
+        return;
+      }
+    } catch {
+      // If browser can't read duration, let backend enforce it
+    }
+
     setLoading(true);
     setError(null);
     setResult(null);
@@ -26,7 +51,7 @@ export default function Dashboard() {
       setResult(res.data);
     } catch (err) {
       console.error(err);
-      setError("Analysis failed. Please check your file and try again.");
+      setError(err.response?.data?.detail || "Analysis failed. Please check your file and try again.");
     } finally {
       setLoading(false);
     }

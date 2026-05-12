@@ -3,7 +3,10 @@ import { useState, useRef } from "react";
 export default function UploadBox({ setFile }) {
   const [dragging, setDragging] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [error, setError] = useState(null);
   const inputRef = useRef();
+
+  const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 
   const NATIVE_FORMATS  = [".wav", ".flac"];
   const CONVERT_FORMATS = [".mp3", ".ogg", ".m4a", ".aac", ".mp4", ".wma", ".opus", ".webm"];
@@ -26,6 +29,16 @@ export default function UploadBox({ setFile }) {
 
   function handleFile(file) {
     if (!file) return;
+    setError(null);
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max: 15 MB.`);
+      setSelected(null);
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+
     setSelected(file);
     setFile(file);
   }
@@ -136,6 +149,23 @@ export default function UploadBox({ setFile }) {
           onChange={(e) => handleFile(e.target.files[0])}
         />
       </div>
+
+      {/* Error message */}
+      {error && (
+        <div
+          className="flex items-center gap-3 rounded-[12px] px-4 py-3"
+          style={{
+            background: "rgba(248,81,73,0.08)",
+            border: "1px solid rgba(248,81,73,0.3)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
+            <circle cx="8" cy="8" r="6.5" stroke="#f85149" strokeWidth="1.3"/>
+            <path d="M8 5v3.5M8 10.5v.5" stroke="#f85149" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <p className="font-mono text-[12px] text-red">{error}</p>
+        </div>
+      )}
 
       {/* Selected file info */}
       {selected && (
