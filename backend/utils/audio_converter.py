@@ -7,6 +7,7 @@ Uses pydub + ffmpeg under the hood.
 
 import io
 import os
+import wave
 from pydub import AudioSegment
 
 
@@ -45,3 +46,23 @@ def convert_to_wav(audio_bytes: bytes, filename: str) -> tuple[bytes, str]:
 
     new_filename = os.path.splitext(filename)[0] + ".wav"
     return wav_bytes, new_filename
+
+
+MAX_AUDIO_DURATION = 120  # seconds
+
+
+def check_audio_duration(audio_bytes: bytes, filename: str):
+    ext = os.path.splitext(filename)[1].lower()
+
+    if ext == ".wav":
+        with wave.open(io.BytesIO(audio_bytes), "rb") as w:
+            duration = w.getnframes() / w.getframerate()
+    else:
+        audio = AudioSegment.from_file(io.BytesIO(audio_bytes), format=ext.lstrip("."))
+        duration = len(audio) / 1000.0
+
+    if duration > MAX_AUDIO_DURATION:
+        raise ValueError(
+            f"Audio is too long ({duration:.1f}s). "
+            f"Maximum allowed: {MAX_AUDIO_DURATION}s (2 minutes)."
+        )

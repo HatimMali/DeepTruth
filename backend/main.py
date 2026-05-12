@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from services.deepfake_service import DeepfakeService
 from services.tampering_service import TamperingService
-from utils.audio_converter import convert_to_wav, ALREADY_SUPPORTED, SUPPORTED_CONVERSIONS
+from utils.audio_converter import convert_to_wav, ALREADY_SUPPORTED, SUPPORTED_CONVERSIONS, check_audio_duration
 
 # ---------------------------------------------------------------------------
 # App Init
@@ -30,6 +30,8 @@ deepfake_service = None
 tampering_service = None
 
 SUPPORTED_EXT = ALREADY_SUPPORTED | SUPPORTED_CONVERSIONS
+
+MAX_FILE_SIZE = 15 * 1024 * 1024  # 15 MB
 
 # ---- Monitoring ----
 START_TIME = time.time()
@@ -161,7 +163,15 @@ async def predict_deepfake(file: UploadFile = File(...)):
 
     try:
         audio_bytes = await file.read()
+
+        if len(audio_bytes) > MAX_FILE_SIZE:
+            raise ValueError(
+                f"File too large ({len(audio_bytes) / (1024 * 1024):.1f} MB). "
+                f"Maximum allowed: {MAX_FILE_SIZE / (1024 * 1024):.0f} MB."
+            )
+
         audio_bytes, converted_filename = convert_to_wav(audio_bytes, file.filename)
+        check_audio_duration(audio_bytes, converted_filename)
         return deepfake_service.predict(audio_bytes, converted_filename)
 
     except ValueError as e:
@@ -178,7 +188,15 @@ async def predict_tampering(file: UploadFile = File(...)):
 
     try:
         audio_bytes = await file.read()
+
+        if len(audio_bytes) > MAX_FILE_SIZE:
+            raise ValueError(
+                f"File too large ({len(audio_bytes) / (1024 * 1024):.1f} MB). "
+                f"Maximum allowed: {MAX_FILE_SIZE / (1024 * 1024):.0f} MB."
+            )
+
         audio_bytes, converted_filename = convert_to_wav(audio_bytes, file.filename)
+        check_audio_duration(audio_bytes, converted_filename)
         return tampering_service.predict(audio_bytes, converted_filename)
 
     except ValueError as e:
